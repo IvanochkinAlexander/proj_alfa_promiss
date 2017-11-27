@@ -77,6 +77,7 @@ list_of_bank = ['alfabank.ru', 'sb','mb','uc','vtb','mcb','bnb','open', 'rf', 'p
 # list_of_bank = ['mb','mcb','open']
 
 for _ in range(100):
+
     run_parsing(list_of_bank)
     subprocess.Popen("python /root/projects/proj_alfa_promiss/find_keywords.py", shell=True)
     send_to_telegram('пропарсили ключевые слова')
@@ -94,6 +95,13 @@ for _ in range(100):
     output, error = process.communicate()  # receive output from the python2 script
     send_to_telegram ('сделали все')
     time.sleep(20)
+    try:
+        paths = ['/root/projects/proj_alfa_promiss/leaver_vw_from_test','/root/projects/proj_alfa_promiss/leaver_vw_from_train']
+        for path_one in paths:
+            os.remove(path_one)
+    except:
+        pass
+
     print ('finished iteration')
 
     time.sleep(7200)
