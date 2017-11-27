@@ -10,7 +10,7 @@ morph = MorphAnalyzer()
 
 def text2int (textnum, numwords={}):
 
-    """"""
+    """Replaces verbal worms to int"""
     if not numwords:
 
         units = [
@@ -111,6 +111,9 @@ def review_to_wordlist(review):
     return(words)
 
 def search_in_text (col):
+
+    """Searches keywords in whole sentence"""
+
     all_values = ''
     for i in keywords_time:
         if i in col:
@@ -119,6 +122,9 @@ def search_in_text (col):
     return all_values
 
 def search_to_exclude (col):
+
+    """"""
+
     all_values = ''
     for i in to_exclude:
         if i in col:
@@ -127,17 +133,13 @@ def search_to_exclude (col):
     # return all_values
 
 def take_digits (col):
+
+    """Returns digits into list"""
+
     col  = re.findall(r'\d+', col)
     all_dig = ''
     for i in col:
-        # try:
-            # if i <=500:
-            # try:
         all_dig += str(i)
-        # except:
-            # all_dig+=str(0)
-        # except:
-            # all_dig += 0
     return all_dig
 
 keywords_time = [
@@ -183,6 +185,8 @@ u'скидка'
 ]
 
 def post_process_data (path):
+
+    """Returns clients promisses"""
 
     df = pd.read_excel(path)
     df['small_text_trans'] = df['small_text'].apply(text2int)

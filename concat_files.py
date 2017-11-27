@@ -21,7 +21,7 @@ def read_and_concat (list_of_files):
                 str_value=str(temp.loc[i, k])
                 if str_value != '0':
                     temp_text+=str_value
-                    temp_text+=', '
+                    temp_text+='. '
             all_text.append(temp_text)
 
         final_df = pd.concat([temp[['url']], pd.DataFrame(all_text)],axis=1)

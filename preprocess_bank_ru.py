@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 
 
@@ -33,8 +36,12 @@ def process_all (path):
     for i in cols_to_del:
         del temp[i]
 
-    # temp.to_excel('/root/portia_projects/output_data/bank_ru_processed.xlsx')
-    temp.to_csv('/root/portia_projects/output_data/bank_ru_processed.csv', encoding='utf-8')
+    # temp.to_csv('/root/portia_projects/output_data/bank_ru_processed.csv', encoding='utf-8')
+
+    temp['all'] = temp['review'] + '_' + temp['theme']
+    temp = temp.rename(columns={'all':u'Суть обращения'})
+
+    temp.to_excel('/root/portia_projects/output_data/bank_ru_processed.xlsx')
 
     return temp
 
