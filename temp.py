@@ -1,39 +1,58 @@
 
 #!/usr/bin/env python3
-import subprocess
 
 import subprocess
 import os
 import telegram
 import time
 import pandas as pd
-# import find_keywords
-
-def send_to_telegram(text):
-
-    """Send appropriate links to telegram channel"""
-
-    bot = telegram.Bot(token='379005601:AAH1rv3ESXLWTXbn14gnCxW52eeKc4qnw50')
-    # chat_id = -1001111732295
-    chat_id = 169719023
-    bot.send_message(chat_id=chat_id, text=text)
-    time.sleep(2)
-
-subprocess.check_output('docker run -i --rm -v ~/portia_projects:/app/data/projects:rw -v ~/portia_projects/output_data:/mnt:rw -p 9004:9004 scrapinghub/portia \
-portiacrawl -s USER_AGENT="Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36" /app/data/projects/banki_ru bank -o /mnt/bank_ru_5000_all.json', shell=True)
-
-send_to_telegram('йоу все пропарсили')
-
-# python3_command = "python2.7 make_classification.py"  # launch your python2 script using bash
-#
-# process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
-# output, error = process.communicate()  # receive output from the python2 script
+import re
+from urllib.parse import urlparse
 
 
-# import os
-#
-# os.system('python find_keywords.py')
-#
-# print ('finished iteration')
-# import subprocess
-# subprocess.Popen("python /root/projects/proj_alfa_promiss/parse_date_money.py", shell=True)
+def read_parse_url (path):
+
+    """Exctacting domain links from the text"""
+
+    file = open(path, 'r')
+    url = file.read()
+    file.close()
+
+    urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', url)
+    urls_df = pd.DataFrame(urls)
+    urls_df[0] = urls_df[0].apply(lambda x : x.replace('>', '').replace(')', '').replace("'", "").replace(",", ""))
+
+    return urls_df
+
+def parse_domain_name (col):
+
+    """Exctracting domain name from url ling"""
+
+    parsed_uri = urlparse(col)
+    domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+
+    return domain
+
+def to_parse_selenium ():
+
+    """
+    Some urls are not parsed by Scrapy,
+    we are looking for this links and
+    prepare to parse them by Selenium with PhantomJs
+    """
+
+    path = 'temp'
+    urls_df = read_parse_url(path)
+    print (urls_df.shape[0])
+    urls_df['domain'] = urls_df[0].apply(parse_domain_name)
+    to_exclude = ['https://github.com/', 'http://www.nfa.ru/']
+    urls_df = urls_df[~urls_df['domain'].isin(to_exclude)]
+    urls_df = urls_df.drop_duplicates(subset=0, keep='first')
+    concated = pd.read_excel('../output/promiss/concated.xlsx')
+    urls_df = urls_df[~urls_df[0].isin(concated['url'].values)]
+    urls_df.to_excel('../output/promiss/to_parse_selenium.xlsx', index=False)
+    print (urls_df['domain'].unique())
+    print (urls_df.shape[0])
+    print (concated.shape[0])
+
+to_parse_selenium()

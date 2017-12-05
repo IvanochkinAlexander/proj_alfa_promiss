@@ -40,7 +40,7 @@ def read_and_concat (list_of_bank):
                     str_value=str(temp.loc[i, k])
                     if str_value != '0':
                         temp_text+=str_value
-                        temp_text+=', '
+                        temp_text+='. '
                 all_text.append(temp_text)
         except:
             pass
@@ -55,46 +55,76 @@ def run_parsing (list_of_bank):
 
     """run total script"""
 
+    # try:
+    #     path_2 = 'temp'
+    #     os.remove(path_2)
+    #     print ('ok')
+    # except OSError:
+    #     pass
+    #     print ('не удалился файл')
+
     for bank in list_of_bank:
+
+        send_to_telegram('парсится файл {}'.format(bank))
 
         try:
             path = '/root/portia_projects/output_data/{}.json'.format(bank)
-            print (path)
             os.remove(path)
+
             print ('ok')
         except OSError:
             pass
 
         subprocess.check_output('docker run -i --rm -v ~/portia_projects:/app/data/projects:rw -v ~/portia_projects/output_data:/mnt:rw -p 9003:9003 scrapinghub/portia \
-        portiacrawl -s USER_AGENT="Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36" /app/data/projects/test {}'.format(bank) + ' -o /mnt/{}.json'.format(bank), shell=True)
+        portiacrawl -s USER_AGENT="Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36" -s depth_limit=3 -s download_timeout=15 /app/data/projects/new_rb {}'.format(bank) + ' -o /mnt/{}.json'.format(bank), shell=True)
 
     concated = read_and_concat(list_of_bank)
     concated.to_excel('../output/promiss/concated.xlsx', index=False)
     send_to_telegram('соединили файлы')
 
+    subprocess.Popen("python /root/projects/proj_alfa_promiss/check_links_for_selenium.py", shell=True)
+    send_to_telegram('проверили ссылки')
+    time.sleep(20)
 
-list_of_bank = ['alfabank.ru', 'sb','mb','uc','vtb','mcb','bnb','open', 'rf', 'ps']
-# list_of_bank = ['mb','mcb','open']
+    python3_command = "python2.7 parse_selenium.py"  # launch your python2 script using bash
+    process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()  # receive output from the python2 script
+    send_to_telegram ('пропарсили selenium')
+    time.sleep(5)
+
+    # print ('всего Scrapy пропарсили {}'.format(concated.shape[0]))
+    parsed_selenium = pd.read_excel('../output/promiss/selenium_parsed.xlsx')
+    # print ('всего selenium пропарсили {}'.format(parsed_selenium.shape[0]))
+    concated = pd.concat([concated, parsed_selenium])
+    concated = concated[~concated['text'].isnull()]
+    concated = concated[concated['text'] != '']
+    concated.to_excel('../output/promiss/concated.xlsx', index=False)
+    # print ('подготовка завершена')
+    send_to_telegram ('пропарсили scrapy_{}'.format(concated.shape[0]))
+    send_to_telegram ('пропарсили selenium_{}'.format(parsed_selenium.shape[0]))
+    time.sleep(240)
+
+list_of_bank = ['pcht', 'www.rshb.ru', 'alfabank.ru', 'mb','uc','vtb','mcb','bnb','open', 'rf', 'ps', 'sb', 'gb']
 
 for _ in range(100):
 
     run_parsing(list_of_bank)
     subprocess.Popen("python /root/projects/proj_alfa_promiss/find_keywords.py", shell=True)
     send_to_telegram('пропарсили ключевые слова')
-    time.sleep(20)
+    time.sleep(400)
     subprocess.Popen("python /root/projects/proj_alfa_promiss/parse_date_money.py", shell=True)
     send_to_telegram ('пропарсили слова и деньги')
-    time.sleep(120)
+    time.sleep(400)
     python3_command = "python2.7 make_classification.py"  # launch your python2 script using bash
     process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()  # receive output from the python2 script
     send_to_telegram ('сделали классификацию')
-    time.sleep(20)
+    time.sleep(400)
     python3_command = "python2.7 search_promiss.py"  # launch your python2 script using bash
     process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()  # receive output from the python2 script
     send_to_telegram ('сделали все')
-    time.sleep(20)
+    time.sleep(400)
     try:
         paths = ['/root/projects/proj_alfa_promiss/leaver_vw_from_test','/root/projects/proj_alfa_promiss/leaver_vw_from_train']
         for path_one in paths:
