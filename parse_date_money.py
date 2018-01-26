@@ -82,13 +82,17 @@ def parse_all (train_test):
     print ('Done.')
     return all_temp
 
-df = pd.read_excel('../output/promiss/all_text_from_multiple.xlsx')
+df = pd.read_json('../output/promiss/all_text_from_multiple.json')
+print ('loaded')
+# df = pd.read_excel('../output/promiss/all_text_from_multiple.xlsx')
 df['bank'] = df['link'].apply(get_url)
 train_test = df
 all_temp = parse_all (train_test)
 temp = all_temp[['date', 'money']].reset_index(drop=True)
 df = pd.concat([df.reset_index(drop=True), temp], axis=1)
-df.to_excel('../output/promiss/parsed_date_money.xlsx', index=False)
+df.to_json('../output/promiss/parsed_date_money.json')
 df = df.rename(columns={'small_text':u'Суть обращения'})
-df[['Суть обращения']].to_excel('../output/promiss/test.xlsx', index=False)
+df['month']=11
+df[['Суть обращения', 'month']].to_json('../output/promiss/test.json')
+# df[['Суть обращения']].to_json('../output/promiss/test.json')
 print ('сохранили файлы')

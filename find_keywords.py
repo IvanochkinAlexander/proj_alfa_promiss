@@ -188,7 +188,7 @@ def post_processing (parsed_data, text_df):
 
     """Preprocess data"""
 
-    for i in range(1000):
+    for i in range(100000):
         parsed_data.loc[parsed_data['type'] != int,  'shifted'] = parsed_data['shifted'].shift(1)
     parsed_data['type'] = parsed_data[0].apply(lambda x:type(x))
     # (parsed_data['type']==unicode) |
@@ -206,7 +206,9 @@ def post_processing (parsed_data, text_df):
     merged_data_cut['keyword'] = merged_data_cut['small_text'].apply(lambda x:x.split('_')[0])
     print (merged_data_cut.shape[0])
     date_time = datetime.datetime.now()
-    merged_data_cut.to_excel('../output/promiss/all_text_from_multiple.xlsx', index=False)
+    # merged_data_cut.to_excel('../output/promiss/all_text_from_multiple.xlsx', index=False)
+    merged_data_cut.to_json('../output/promiss/all_text_from_multiple.json')
+
     return merged_data_cut
 
 
@@ -243,10 +245,15 @@ u'выдача наличные',u'регион присутствие',u'бли
 stop= []
 # stop.pop(stop.index(u'не'))
 morph = MorphAnalyzer()
-text_df = pd.read_excel('../output/promiss/concated.xlsx')
+# text_df = pd.read_excel('../output/promiss/concated.xlsx')
+text_df = pd.read_json('../output/promiss/concated.json')
+text_df = text_df[~text_df['url'].isnull()]
+text_df = text_df.reset_index(drop=True)
+print ('loaded')
 print (text_df.shape[0])
 keysentenses_all, text_df = split_sentences(text_df)
 parsed_data= find_keywords (text_df, keysentenses_all, to_search)
+print ('merging')
 merged_data_cut = post_processing(parsed_data, text_df)
 
 print("--- %s seconds ---" % (time.time() - start_time))

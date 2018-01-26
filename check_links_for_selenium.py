@@ -9,6 +9,16 @@ import pandas as pd
 import re
 from urllib.parse import urlparse
 
+def send_to_telegram(text):
+
+    """Send appropriate links to telegram channel"""
+
+    bot = telegram.Bot(token='379005601:AAH1rv3ESXLWTXbn14gnCxW52eeKc4qnw50')
+    # chat_id = -1001111732295
+    chat_id = 169719023
+    bot.send_message(chat_id=chat_id, text=text)
+    time.sleep(10)
+
 
 def read_parse_url (path):
 
@@ -44,11 +54,11 @@ def to_parse_selenium ():
 
     path = 'temp'
     urls_df = read_parse_url(path)
-    print (urls_df.shape[0])
+    # print (urls_df.shape[0])
     urls_df['domain'] = urls_df[0].apply(parse_domain_name)
-    print (urls_df['domain'].unique())
+    # print (urls_df['domain'].unique())
     urls_df['http'] = urls_df[0].apply(lambda x : x.split(':/')[0])
-    urls_df.to_excel('../output/promiss/temp_to_del.xlsx', index=False)
+    # urls_df.to_excel('../output/promiss/temp_to_del.xlsx', index=False)
     urls_df.loc[urls_df['domain']=='http://www.gazprombank.ru/', 'http'] = 'https'
     urls_df=urls_df[urls_df['http']=='https']
 
@@ -96,13 +106,43 @@ def to_parse_selenium ():
     'https://zp.alfabank.ru/']
 
     urls_df = urls_df[~urls_df['domain'].isin(to_exclude)]
-    urls_df = urls_df.drop_duplicates(subset=0, keep='first')
-    concated = pd.read_excel('../output/promiss/concated.xlsx')
-    urls_df = urls_df[~urls_df[0].isin(concated['url'].values)]
-    urls_df.to_excel('../output/promiss/to_parse_selenium.xlsx', index=False)
 
-    print (urls_df['domain'].unique())
-    print (urls_df.shape[0])
-    print (concated.shape[0])
+    to_exclude = [u'play.google.com', u'privetmir.ru', u'qiwi.com', u'rapida.ru',
+    u'robek.ru', u'ru.aliexpress.com', u'sunlight.net', u'twitter.com',
+    u'vk.com', u'www.android.com',
+    u'www.bnpparibascardif.ru', u'www.citilink.ru', u'www.euroset.ru',
+    u'www.facebook.com', u'www.googletagmanager.com',
+    u'www.instagram.com', u'www.kupivip.ru', u'www.loccitane.ru',
+    u'www.maraquia.com', u'www.oldi.ru',
+    u'www.visa.com.ru',
+    u'www.youtube.com', u'xn--80aaggvgieoeoa2bo7l.xn--p1ai', u'yadi.sk',
+    u'yoter.ru', u'zingaya.com', u'facebook.com', u'itunes.apple.com',
+    u'kassa.alfabank.ru', u'lubidom.ru',
+    u'mycardif.ru', u'ok.ru',
+    u't.me',
+ u'my.5ka.ru',
+u'aslife.ru',
+ u'cardholderbenefitsonline.com',
+ u'fonts.googleapis.com',
+ u'www.corpcentre.ru',
+ u'www.mebel-moskva.ru'
+ u'mebelcomodo.ru',
+ u'sekretoria.ru',
+ u'tropikanka.com',
+u'www.gratzbonus.com']
+
+    urls_df['domain_2'] = urls_df[0].apply(lambda x : x.split('://')[1].split('/')[0])
+    urls_df = urls_df[~urls_df['domain_2'].isin(to_exclude)]
+
+    urls_df = urls_df.drop_duplicates(subset=0, keep='first')
+    # concated = pd.read_excel('../output/promiss/concated.xlsx')
+    concated = pd.read_json('../output/promiss/concated.json')
+    urls_df = urls_df[~urls_df[0].isin(concated['url'].values)]
+    urls_df.to_json('../output/promiss/to_parse_selenium.json')
+
+    send_to_telegram ('уникальные доменные имена: {}'.format(urls_df['domain'].unique()))
+    send_to_telegram ('Всего scrapy: {}'.format(concated.shape[0]))
+    send_to_telegram ('Scrapy не распарсилось: {}'.format(urls_df.shape[0]))
+
 
 to_parse_selenium()

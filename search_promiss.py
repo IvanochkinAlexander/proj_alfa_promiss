@@ -176,6 +176,7 @@ keywords_time = [
 to_exclude = [
 
 u'необходимый',
+u'балл',
 u'разрешенный',
 u'бесплатный',
 u'бесплатно',
@@ -210,13 +211,18 @@ u'не_реже'
 
 ]
 
-path = '/root/projects/output/promiss/parsed_date_money_classification.xlsx'
+path = '/root/projects/output/promiss/parsed_date_money_classification.json'
 
 def post_process_data (path):
 
 #     """Returns clients promisses"""
 
-    df = pd.read_excel(path)
+    df = pd.read_json(path)
+    df = df.reset_index()
+    df = df.sort_values('index')
+    del df['index']
+    df = df.reset_index(drop=True)
+
     df['small_text_trans'] = df['small_text'].apply(text2int)
     df['small_text_temp'] = df['small_text_trans'].apply(lambda x : x.split('_')[1].replace('[', '').replace(']','').replace('%', u'процент'))
     df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub(u'любой', '0', text))
@@ -226,7 +232,7 @@ def post_process_data (path):
     df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub(u'сразу', u'0 час', text))
     df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub(u'%', u' процент', text))
     df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub('%', u' процент', text))
-    df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub(u'р.', u' рубль', text))
+    # df['small_text_temp'] = df['small_text_temp'].apply(lambda text : re.sub(u'р.', u' рубль', text))
 
 
     collection = [wrk_words_wt_no(text) for text in df['small_text_temp']]
@@ -333,7 +339,7 @@ def post_process_data (path):
     clients_promiss['uid'] = clients_promiss[u'Обещание'] + '_' + clients_promiss[u'Текст']
     clients_promiss = clients_promiss.drop_duplicates('uid', keep='first')
     del clients_promiss['uid']
-    clients_promiss.to_excel('../output/promiss/clients_promiss.xlsx', index=False)
-    df.to_excel('../output/promiss/all_data_temp.xlsx', index=False)
+    clients_promiss.to_json('../output/promiss/clients_promiss.json')
+    df.to_json('../output/promiss/all_data_temp.json')
 
 post_process_data (path)

@@ -21,12 +21,24 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import re
 import datetime
-from cStringIO import StringIO
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfpage import PDFPage
+# from cStringIO import StringIO
+# from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+# from pdfminer.converter import TextConverter
+# from pdfminer.layout import LAParams
+# from pdfminer.pdfpage import PDFPage
 import subprocess
+import telegram
+import time
+
+def send_to_telegram(text):
+
+    """Send appropriate links to telegram channel"""
+
+    bot = telegram.Bot(token='379005601:AAH1rv3ESXLWTXbn14gnCxW52eeKc4qnw50')
+    # chat_id = -1001111732295
+    chat_id = 169719023
+    bot.send_message(chat_id=chat_id, text=text)
+    time.sleep(10)
 
 date_time = datetime.datetime.now()
 
@@ -65,6 +77,8 @@ random_tags = ["panel",
              "ui-trading-security-news__filte",
              "ui-context-filter ui-context-filter_filter-news",
              "application",
+	     "tb-container",
+             "div",
              "col-group",
              "main__inner main__inner_no-bg",
              "services-payment__item-text",
@@ -73,70 +87,6 @@ random_tags = ["panel",
              "body-container",
              "descrip"
              ]
-
-def convert(fname, pages=None):
-
-    """Process pdf file"""
-
-    if not pages:
-        pagenums = set()
-    else:
-        pagenums = set(pages)
-
-    output = StringIO()
-    manager = PDFResourceManager()
-    converter = TextConverter(manager, output, laparams=LAParams())
-    interpreter = PDFPageInterpreter(manager, converter)
-
-    infile = file(fname, 'rb')
-    for page in PDFPage.get_pages(infile, pagenums):
-        interpreter.process_page(page)
-    infile.close()
-    converter.close()
-    text = output.getvalue()
-    output.close
-    return text
-
-def make_unicode(input):
-
-    """Convert string to unicode"""
-
-    if type(input) != unicode:
-        input =  input.decode('utf-8')
-        return input
-    else:
-        return input
-
-
-import docx
-import docx2txt
-from pptx import Presentation
-
-def read_docx (file):
-
-    """Process docx files"""
-
-    text = docx2txt.process(file)
-    return text
-
-def read_pptx (file):
-
-    """Process powerpoint files"""
-
-    prs = Presentation(file)
-
-    text_runs = ''
-
-    for slide in prs.slides:
-        for shape in slide.shapes:
-            if not shape.has_text_frame:
-                continue
-            for paragraph in shape.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    text_runs+=run.text
-                    text_runs+=' '
-    return text_runs
-
 
 def cut_data (links_df):
 
@@ -151,8 +101,30 @@ def cut_data (links_df):
         links_df_df= links_df_df[:300]
         final_df= pd.concat([final_df, links_df_df])
     final_df = final_df.reset_index(drop=True)
-    final_df = final_df[final_df['length']<=6]
+    final_df = final_df[final_df['length']<=9]
     return final_df
+
+# def parse_links (links_alfa, random_tags):
+#
+#     """Parse all links"""
+#
+#     long_text = []
+#     values = []
+#     for i, k in enumerate(pd.DataFrame(links_alfa)[0].unique()):
+#         try:
+#             print (k)
+#
+#             YOUR_PAGE_URL = k
+#             browser.get(YOUR_PAGE_URL)
+#             page = browser.page_source
+#             soup = BeautifulSoup(page, "lxml")
+#             long_text.append(i)
+#             long_text.append(soup.text)
+#         except:
+#             print ('ошибка')
+#             pass
+#     return long_text
+
 
 def parse_links (links_alfa, random_tags):
 
@@ -163,42 +135,19 @@ def parse_links (links_alfa, random_tags):
     for i, k in enumerate(pd.DataFrame(links_alfa)[0].unique()):
         try:
             print (k)
-            if k.split('.')[-1] == 'pdf':
-                name = k.split('/')[-1]
-                subprocess.check_output('!wget -N {k} -P ../output/promiss/pdfs') ### -N проверят версию файла, если она новее, то файл перезаписывается
-                text_from_pdf = convert('pdfs/{}'.format(name))
-                print (i)
+            YOUR_PAGE_URL = k
+            browser.get(YOUR_PAGE_URL)
+            page = browser.page_source
+            soup = BeautifulSoup(page, "lxml")
+            for value in soup.find_all('div', class_=random_tags):
                 long_text.append(i)
-                long_text.append(text_from_pdf)
-            elif k.split('.')[-1] == 'docx':
-                name = k.split('/')[-1]
-                subprocess.check_output('!wget -N {k} -P ../output/promiss/pdfs') ### -N проверят версию файла, если она новее, то файл перезаписывается
-                text_from_pdf = read_docx('pdfs/{}'.format(name))
-                print (i)
-                long_text.append(i)
-                long_text.append(text_from_pdf)
-            elif k.split('.')[-1] == 'pptx':
-                name = k.split('/')[-1]
-                subprocess.check_output('!wget -N {k} -P ../output/promiss/pdfs') ### -N проверят версию файла, если она новее, то файл перезаписывается
-                text_from_pdf = read_pptx('pdfs/{}'.format(name))
-                print (i)
-                long_text.append(i)
-                long_text.append(text_from_pdf)
-            else:
-                YOUR_PAGE_URL = k
-
-                browser.get(YOUR_PAGE_URL)
-                page = browser.page_source
-                soup = BeautifulSoup(page, "lxml")
-                for value in soup.find_all('div', class_=random_tags):
-                    long_text.append(i)
-                    long_text.append(value.text)
-
+                long_text.append(value.text)
+            # long_text.append(i)
+            # long_text.append(soup.text)
         except:
+            print ('ошибка')
             pass
     return long_text
-
-
 
 def post_processing (long_text):
 
@@ -207,24 +156,29 @@ def post_processing (long_text):
     text_down = pd.DataFrame(long_text)
     text_down['shifted'] = text_down[0].shift(1)
     text_down['type'] = text_down[0].apply(lambda x:type(x))
-    text_down = text_down[(text_down['type']==unicode) | (text_down['type']==str)]
+    text_down = text_down[(text_down['type']==str)]
     text_down=text_down.rename(columns={0:'text'})
     links_df = pd.DataFrame(pd.DataFrame(links_alfa)[0].unique()).reset_index()
     merged_text = pd.merge(text_down, links_df, left_on='shifted', right_on='index', how='left')
     merged_text_cut = merged_text[['text', 0]]
     merged_text_cut.columns=('full_text', 'link')
     merged_text_cut = merged_text_cut.drop_duplicates(subset='full_text', keep='first')
-    merged_text_cut['full_text'] = merged_text_cut['full_text'].apply(make_unicode)
+    merged_text_cut['full_text'] = merged_text_cut['full_text'].astype(str)
     merged_text_cut.columns = ('text', 'url')
-    merged_text_cut[['url', 'text']].to_excel('../output/promiss/selenium_parsed.xlsx', index=False)
+    merged_text_cut[['url', 'text']].to_json('../output/promiss/selenium_parsed.json')
+    send_to_telegram('пропарсено ссылок selenium!!! {}'.format(merged_text_cut['url'].nunique()))
     print (merged_text_cut.shape[0])
 
 
-links_alfa = pd.read_excel('../output/promiss/to_parse_selenium.xlsx')
-links_alfa = cut_data(links_alfa)
-links_alfa.to_excel('../output/promiss/to_parse_selenium.xlsx', index=False)
-print ('новая размерность составляет {}'.format(links_alfa.shape[0]))
+links_alfa = pd.read_json('../output/promiss/to_parse_selenium.json')
 browser = webdriver.PhantomJS(executable_path='../../../usr/local/bin/phantomjs')
-browser.set_page_load_timeout(15)
+browser.set_page_load_timeout(40)
+send_to_telegram(('всего ссылок без удаления {}'.format(links_alfa.shape[0])))
+print (links_alfa.columns)
+links_alfa=links_alfa.rename(columns={'0':0})
+links_alfa = cut_data(links_alfa)
+links_alfa.to_json('../output/promiss/to_parse_selenium.json')
+send_to_telegram(('после удаления по условиям {}'.format(links_alfa.shape[0])))
 long_text = parse_links(links_alfa, random_tags)
 post_processing (long_text)
+send_to_telegram ('если это сообщение пришло, значит сработал селениум')
