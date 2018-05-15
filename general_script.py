@@ -9,9 +9,8 @@ def send_to_telegram(text):
 
     """Send appropriate links to telegram channel"""
 
-    bot = telegram.Bot(token='379005601:AAH1rv3ESXLWTXbn14gnCxW52eeKc4qnw50')
-    # chat_id = -1001111732295
-    chat_id = 169719023
+    bot = telegram.Bot(token='')
+    chat_id = ''
     bot.send_message(chat_id=chat_id, text=text)
     time.sleep(15)
 
@@ -68,14 +67,14 @@ def run_parsing (list_of_bank):
         except OSError:
             pass
 
-        subprocess.check_output('docker run -i --rm -v ~/portia_projects:/app/data/projects:rw -v ~/portia_projects/output_data:/mnt:rw -p 9003:9003 scrapinghub/portia \
-        portiacrawl -s USER_AGENT="Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36" -s depth_limit=3 -s download_timeout=15 /app/data/projects/new_rb {}'.format(bank) + ' -o /mnt/{}.json'.format(bank), shell=True)
-    # subprocess.check_output('python ../../python-sitemap/main.py --domain https://www.tinkoff.ru/ --output ../output/promiss/sitemap.xml --exclude "invest" --exclude "news" --exclude "login" --exclude "eng" --exclude "auth" --exclude "about" --verbose', shell=True)
-    # send_to_telegram('сделали tcs')
+    subprocess.check_output('docker run -i --rm -v ~/portia_projects:/app/data/projects:rw -v ~/portia_projects/output_data:/mnt:rw -p 9003:9003 scrapinghub/portia \
+    portiacrawl -s USER_AGENT="Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36" -s depth_limit=3 -s download_timeout=15 /app/data/projects/new_rb {}'.format(bank) + ' -o /mnt/{}.json'.format(bank), shell=True)
+    subprocess.check_output('python ../../python-sitemap/main.py --domain https://www.tinkoff.ru/ --output ../output/promiss/sitemap.xml --exclude "invest" --exclude "news" --exclude "login" --exclude "eng" --exclude "auth" --exclude "about" --verbose', shell=True)
+    send_to_telegram('сделали tcs')
     subprocess.check_output('python ../../python-sitemap/main.py --domain https://open.ru/ --output sitemap.xml --exclude "storage" --exclude "about" --exclude "news" --exclude "press" --exclude "addresses" --verbose', shell=True)
     send_to_telegram('сделали open')
-    # subprocess.check_output('python ../../python-sitemap/main.py --domain https://rosbank.ru/ --output sitemap.xml --exclude "files" --exclude "offices" --exclude "pm" --exclude "upload" --exclude "about" --exclude "en" --exclude "realty" --exclude "atm" --exclude "search" --exclude "fin_inst" --exclude "promo" --exclude "press" --verbose', shell=True)
-    # send_to_telegram('сделали rosbank')
+    subprocess.check_output('python ../../python-sitemap/main.py --domain https://rosbank.ru/ --output sitemap.xml --exclude "files" --exclude "offices" --exclude "pm" --exclude "upload" --exclude "about" --exclude "en" --exclude "realty" --exclude "atm" --exclude "search" --exclude "fin_inst" --exclude "promo" --exclude "press" --verbose', shell=True)
+    send_to_telegram('сделали rosbank')
     n=60
     concated = read_and_concat(list_of_bank)
     concated=concated.reset_index(drop=True)
@@ -87,16 +86,13 @@ def run_parsing (list_of_bank):
     out, err = process.communicate()
     errcode = process.returncode
 
-
     send_to_telegram('проверили ссылки')
     time.sleep(n)
 
     process = subprocess.Popen("python /root/projects/proj_alfa_promiss/parse_selenium.py",shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     errcode = process.returncode
-
-
-
+    
     send_to_telegram ('пропарсили selenium')
 
     time.sleep(n+10)
@@ -112,11 +108,8 @@ def run_parsing (list_of_bank):
 
     time.sleep(n-20)
 
-# list_of_bank = ['pcht', 'www.rshb.ru', 'alfabank.ru', 'mb','uc','vtb','mcb','bnb','open', 'rf', 'ps', 'sb', 'gb']
+list_of_bank = ['pcht', 'www.rshb.ru', 'alfabank.ru', 'mb','uc','vtb','mcb','bnb','open', 'rf', 'ps', 'sb', 'gb']
 
-list_of_bank = ['pcht', 'ps']
-
-# for _ in range(100):
 n=60
 
 run_parsing(list_of_bank)
@@ -137,20 +130,16 @@ errcode = process.returncode
 send_to_telegram ('пропарсили слова и деньги')
 time.sleep(n+30)
 
-python3_command = "python2.7 make_classification.py"  # launch your python2 script using bash
+python3_command = "python2.7 make_classification.py"
 process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()  # receive output from the python2 script
-
-
-# python3_command = "python2.7 search_promiss.py"  #  launch your python2 script using bash
-
+output, error = process.communicate()
 
 send_to_telegram ('сделали классификацию')
 time.sleep(n+30)
 
-python3_command = "python2.7 search_promiss.py"  # launch your python2 script using bash
+python3_command = "python2.7 search_promiss.py"
 process = subprocess.Popen(python3_command.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()  # receive output from the python2 script
+output, error = process.communicate()
 
 send_to_telegram ('сделали все')
 time.sleep(n+30)
